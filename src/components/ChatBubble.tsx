@@ -43,34 +43,51 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     // If message is not complete yet, don't extract sources
     if (!isComplete) return [cleanMessage, []];
 
-    // Find the Sources section
-    const parts = cleanMessage.split("## Sources");
+    // Try multiple source section patterns
+    let parts = cleanMessage.split(/^## Sources/m);
+    if (parts.length <= 1) {
+      // Try alternative format "Sources:"
+      parts = cleanMessage.split(/^Sources:/m);
+    }
     if (parts.length <= 1) return [cleanMessage, []];
 
     // Extract source information
     const content = parts[0].trim();
     const sourcesText = parts[1].trim();
 
-    // Parse sources
-    const sourceLines = sourcesText
-      .split("\n")
-      .filter((line) => /^\d+\./.test(line.trim()));
-    const parsed = sourceLines.map((line) => {
+    // Parse sources - try multiple formats
+    const sourceLines = sourcesText.split("\n").filter((line) => {
+      const trimmed = line.trim();
+      // Match numbered lines with links like "1. [Title](url)" or just "[Title](url)"
+      return /^(\d+\.\s+)?\[.+\]\(https?:\/\/.+\)/.test(trimmed);
+    });
+
+    // Create sources array with proper typing
+    const parsed: Source[] = [];
+
+    // Process each source line and add to the array
+    sourceLines.forEach((line, index) => {
+      // Extract id (if present)
       const idMatch = line.match(/^(\d+)\./);
       const id = idMatch ? parseInt(idMatch[1], 10) : 0;
 
+      // Extract title
       const titleMatch = line.match(/\[(.*?)\]/);
       const title = titleMatch ? titleMatch[1] : "";
 
-      const urlMatch = line.match(/\((https?:\/\/.*?)\)/);
+      // Extract URL
+      const urlMatch = line.match(/\]\((https?:\/\/[^)]+)\)/);
       const url = urlMatch ? urlMatch[1] : "";
 
-      return {
-        id,
+      // If no ID was found but we have a URL, generate one based on position
+      const finalId = id || index + 1;
+
+      parsed.push({
+        id: finalId,
         url,
         title,
         source: title, // Using title as source name
-      };
+      });
     });
 
     return [content, parsed];
@@ -82,7 +99,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   // Function to render a source pill
   const SourcePill = ({ number }: { number: number }) => {
     // Find the source with the matching id
-    const source = allSources.find((src) => src.id === number);
+    const source = allSources.find((src: Source) => src.id === number);
 
     // Only make it a link if we have a URL
     if (source?.url) {
@@ -91,7 +108,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           href={source.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center w-[1.4rem] h-[1.4rem] text-xs font-semibold rounded-none bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 no-underline align-middle mx-0.5"
+          className="inline-flex items-center justify-center px-1.5 min-w-[1rem] h-[1rem] text-xs font-semibold rounded bg-[#4a5568] text-white hover:bg-opacity-80 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 no-underline align-middle mx-0.5 leading-none"
           aria-label={`Source ${number}: ${source?.title || "Unknown"}`}
           title={source?.title || `Source ${number}`}
         >
@@ -103,7 +120,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     // Fallback to non-clickable pill
     return (
       <span
-        className="inline-flex items-center justify-center w-[1.4rem] h-[1.4rem] text-xs font-semibold rounded-none bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 no-underline align-middle mx-0.5"
+        className="inline-flex items-center justify-center px-1.5 min-w-[1rem] h-[1rem] text-xs font-semibold rounded bg-[#4a5568] text-white align-middle mx-0.5 leading-none"
         aria-label={`Source ${number}`}
       >
         {number}
@@ -113,11 +130,13 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   // Function to process text content and render source pills
   const processText = (text: string): React.ReactNode => {
-    // Only process text containing source references
+    // Only process text containing source references if message is complete
     if (!text.includes("[") || !isComplete) return text;
 
-    // Use a regex pattern that captures the entire source reference
-    const sourcePattern = /\[(\d+(?:,\s*\d+)*)\]/g;
+    // Use a more flexible pattern that captures source references in markdown
+    // Handles [1], [2], [1,2], [1, 2] that aren't part of links like [text](url)
+    // Also handles cases where text might continue after the reference
+    const sourcePattern = /\[(\d+(?:,\s*\d+)*)\](?!\()/g;
 
     // Split the text into parts and source references
     const parts: Part[] = [];
@@ -136,14 +155,17 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
       // Process the source numbers
       const sourceRef = match[1];
       const sourceNums = sourceRef
-        .split(",")
-        .map((num) => parseInt(num.trim(), 10));
+        .split(/,\s*/)
+        .map((num) => parseInt(num.trim(), 10))
+        .filter((num) => !isNaN(num));
 
       // Add a source pill for each number
-      parts.push({
-        type: "source",
-        numbers: sourceNums,
-      });
+      if (sourceNums.length > 0) {
+        parts.push({
+          type: "source",
+          numbers: sourceNums,
+        });
+      }
 
       lastIndex = match.index + match[0].length;
     }
@@ -171,7 +193,10 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             );
           } else {
             return (
-              <span key={`sources-${index}`} className="inline-flex gap-0.5">
+              <span
+                key={`sources-${index}`}
+                className="inline-flex gap-0.5 align-middle"
+              >
                 {part.numbers.map((num, i) => (
                   <SourcePill key={`pill-${index}-${i}`} number={num} />
                 ))}
@@ -197,8 +222,17 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
       <div className={`max-w-[80%] ${isUser ? "order-2" : "order-1"}`}>
         <div
           className={`p-4 rounded-lg ${
-            isUser ? "bg-blue-600 text-white" : "bg-[#2a3041] text-white"
+            isUser ? "bg-[#4F46E5] text-white" : "bg-[#2a3041] text-white"
           }`}
+          /* Other modern color options for user messages:
+             - Deep Teal: bg-[#0D9488] - A sophisticated teal that feels professional and modern
+             - Rich Purple: bg-[#7C3AED] - A vibrant purple that stands out nicely
+             - Modern Green: bg-[#059669] - A calm, earthy green that feels balanced
+             - Charcoal: bg-[#374151] - A professional dark gray with slight blue undertones
+             - Indigo: bg-[#4F46E5] - A refined alternative to standard blue
+             - Deep Rose: bg-[#BE185D] - A rich, mature pink that feels contemporary
+             - Slate: bg-[#475569] - A neutral gray with cool undertones
+          */
         >
           {isLoading ? (
             <div className="flex items-center">
@@ -248,7 +282,35 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
                         className="list-decimal pl-6 space-y-1 my-2"
                       />
                     ),
-                    li: ({ ...props }) => <li {...props} className="pl-1" />,
+                    li: ({ children, ...props }) => {
+                      // Process children to handle source references in list items
+                      if (React.isValidElement(children)) {
+                        return <li {...props}>{children}</li>;
+                      }
+                      // For string children in list items, process for source references
+                      if (typeof children === "string") {
+                        return <li {...props}>{processText(children)}</li>;
+                      }
+                      // If children is an array, process each string element
+                      if (Array.isArray(children)) {
+                        const processedChildren = children.map((child, i) => {
+                          if (typeof child === "string") {
+                            return (
+                              <React.Fragment key={i}>
+                                {processText(child)}
+                              </React.Fragment>
+                            );
+                          }
+                          return child;
+                        });
+                        return <li {...props}>{processedChildren}</li>;
+                      }
+                      return (
+                        <li {...props} className="pl-1">
+                          {children}
+                        </li>
+                      );
+                    },
                     // Headers
                     h1: ({ ...props }) => (
                       <h1 {...props} className="text-xl font-bold mt-4 mb-2" />
@@ -273,6 +335,30 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
                     ? messageContent
                     : cleanMessage}
                 </ReactMarkdown>
+
+                {/* Display sources section if available and message is complete */}
+                {isComplete && allSources.length > 0 && (
+                  <div className="mt-3 border-t border-gray-600 pt-2">
+                    <div className="text-sm font-semibold mb-1">Sources:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {allSources.map((source: Source) => (
+                        <a
+                          key={source.id}
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-[#4a5568] text-white hover:bg-opacity-80 transition-colors"
+                          title={source.title}
+                        >
+                          <span className="mr-1">{source.id}.</span>
+                          <span className="truncate max-w-[150px]">
+                            {source.title}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

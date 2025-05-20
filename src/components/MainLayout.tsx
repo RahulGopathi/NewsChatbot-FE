@@ -42,6 +42,7 @@ const MainLayout: React.FC = () => {
             text: msg.content,
             isUser: msg.role === "user",
             timestamp: formatAPITimestamp(msg.timestamp),
+            isComplete: msg.role === "ai", // Mark AI messages as complete
           }));
 
         setMessages(formattedMessages);
@@ -200,6 +201,7 @@ const MainLayout: React.FC = () => {
                   return {
                     ...msg,
                     isLoading: false,
+                    isComplete: true, // Add isComplete flag when message is fully received
                   };
                 }
                 return msg;

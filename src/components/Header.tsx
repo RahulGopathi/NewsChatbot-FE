@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({ onResetSession }) => {
       <div className="flex items-center space-x-4">
         <button
           onClick={onResetSession}
-          className="flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 transition-colors"
+          className="flex items-center px-3 py-1.5 rounded-md bg-[#4F46E5] hover:bg-opacity-50 transition-colors"
           title="Reset Session"
         >
           <FiRefreshCw className="h-4 w-4 mr-2" />
@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ onResetSession }) => {
 
         <IoMdNotificationsOutline className="h-6 w-6" />
 
-        <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold overflow-hidden">
+        <div className="h-10 w-10 rounded-full bg-[#4F46E5] flex items-center justify-center text-white font-bold overflow-hidden">
           <span>RG</span>
         </div>
       </div>
