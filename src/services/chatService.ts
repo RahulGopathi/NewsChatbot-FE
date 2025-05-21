@@ -105,11 +105,17 @@ export const chatService = {
     try {
       const sessionId = await this.getSessionId();
 
-      const response = await fetch(`${API_URL}/api/v1/chat/query`, {
+      // Create URL with query parameters for EventSource
+      const url = `${API_URL}/api/v1/chat/query`;
+
+      // Use fetch with proper SSE headers
+      const response = await fetch(url, {
         method: "POST",
         headers: {
-          accept: "application/json",
           "Content-Type": "application/json",
+          Accept: "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
         },
         body: JSON.stringify({
           message,
@@ -118,7 +124,9 @@ export const chatService = {
       });
 
       if (!response.ok || !response.body) {
-        throw new Error("Failed to send message");
+        throw new Error(
+          `Failed to send message: ${response.status} ${response.statusText}`
+        );
       }
 
       // Process the streaming response
