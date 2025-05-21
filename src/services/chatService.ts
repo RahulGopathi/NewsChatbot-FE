@@ -28,7 +28,7 @@ export interface ChatHistory {
 }
 
 // Read API URL from environment variable
-const API_URL = import.meta.env.VITE_BACKEND_API_URL || "http://127.0.0.1:8000";
+const API_URL = import.meta.env.VITE_BACKEND_API_URL || "http://api:8000";
 
 // Session management
 const SESSION_STORAGE_KEY = "chat_session_id";
