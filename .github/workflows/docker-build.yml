@@ -33,7 +33,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/newschatbot-frontend:latest
-            ghcr.io/${{ github.repository_owner }}/newschatbot-frontend:${{ steps.tag.outputs.VERSION }}
+            ghcr.io/${{ github.repository_owner | lowercase }}/newschatbot-frontend:latest
+            ghcr.io/${{ github.repository_owner | lowercase }}/newschatbot-frontend:${{ steps.tag.outputs.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
