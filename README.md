@@ -1,54 +1,146 @@
-# React + TypeScript + Vite
+# NewsChatbot Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern React-based chatbot interface for querying news articles with a clean and responsive UI.
 
-Currently, two official plugins are available:
+![NewsChatbot Frontend](https://github.com/RahulGopathi/NewsChatbot-FE/workflows/Deploy%20Container/badge.svg)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- Clean, responsive chat interface
+- Real-time interaction with the News Chatbot backend
+- Session-based chat history persistence
+- Modern UI built with React, TypeScript, and Tailwind CSS
+- Containerized for easy deployment
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- **React**: Frontend library for building user interfaces
+- **TypeScript**: Type-safe JavaScript
+- **Vite**: Next-generation frontend build tool
+- **Tailwind CSS**: Utility-first CSS framework
+- **Docker**: Containerization
+- **Nginx**: Web server for production deployment
+
+## Prerequisites
+
+- Node.js 16+
+- npm or yarn
+- Docker (for containerized deployment)
+
+## Getting Started
+
+### Local Development
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/RahulGopathi/NewsChatbot-FE.git
+cd NewsChatbot-FE
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Install dependencies:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+npm install
+# or
+yarn install
 ```
+
+3. Set up environment variables:
+
+Create a `.env` file in the root directory with:
+
+```
+VITE_BACKEND_API_URL=http://localhost:8000
+```
+
+4. Start the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+The application will be available at `http://localhost:5173`
+
+### Building for Production
+
+```bash
+npm run build
+# or
+yarn build
+```
+
+The build artifacts will be stored in the `dist/` directory.
+
+## Docker Deployment
+
+### Building the Docker Image
+
+```bash
+docker build -t newschatbot-fe .
+```
+
+### Running the Container
+
+```bash
+docker run -p 80:80 -e VITE_BACKEND_API_URL=http://your-backend-api newschatbot-fe
+```
+
+### Using GitHub Container Registry
+
+```bash
+docker pull ghcr.io/rahulgopathi/newschatbot-fe:latest
+docker run -p 80:80 -e VITE_BACKEND_API_URL=http://your-backend-api ghcr.io/rahulgopathi/newschatbot-fe:latest
+```
+
+## Project Structure
+
+```
+NewsChatbot-FE/
+├── src/                    # Source files
+│   ├── assets/             # Static assets
+│   ├── components/         # Reusable React components
+│   ├── services/           # API services
+│   ├── App.tsx             # Main App component
+│   └── main.tsx            # Entry point
+├── public/                 # Public static files
+├── index.html              # HTML template
+├── vite.config.ts          # Vite configuration
+├── tsconfig.json           # TypeScript configuration
+├── tailwind.config.js      # Tailwind CSS configuration
+├── Dockerfile              # Docker configuration
+├── nginx.conf              # Nginx configuration for production
+└── package.json            # Project dependencies and scripts
+```
+
+## Development
+
+### Adding New Components
+
+Place new components in the `src/components` directory with proper naming conventions:
+
+```
+src/components/
+├── ChatBox/
+│   ├── ChatBox.tsx
+│   └── ChatBox.css
+├── MessageList/
+│   └── MessageList.tsx
+└── ...
+```
+
+### API Integration
+
+The application communicates with the backend using services defined in the `src/services` directory. The main service for chat functionality is located at `src/services/chatService.ts`.
+
+## Deployment
+
+The application is set up for continuous deployment using GitHub Actions. When changes are pushed to the main branch, a new Docker image is built and published to GitHub Container Registry.
+
+For more details, see the workflow file at `.github/workflows/docker-build.yml`.
+
+## License
+
+MIT License
